@@ -13,6 +13,6 @@ import { RabbitMQConnectionLogger } from "./rabbitmq-connection.logger";
     }),
   ],
   providers: [RabbitMQConnectionLogger],
-  exports: [RabbitMQModule],
+  exports: [RabbitMQInfraModule],
 })
 export class RabbitMQInfraModule {}

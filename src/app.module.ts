@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { EnvValidationOptions, EnvValidationSchema, formatEnvErrors } from './config/env-validation.config';
 import { RabbitMQInfraModule } from './infrastructures/rabbitmq/rabbitmq-infra.module';
+import { MailerInfraModule } from './infrastructures/mail/mailer-infra.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RabbitMQInfraModule } from './infrastructures/rabbitmq/rabbitmq-infra.m
       },
     }),
     RabbitMQInfraModule,
+    MailerInfraModule,
   ],
   controllers: [AppController],
   providers: [AppService],
