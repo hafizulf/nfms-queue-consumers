@@ -1,5 +1,6 @@
 export const RABBITMQ_EXCHANGES = {
   AUTH_EVENTS: 'auth.events',
+  DEAD_LETTER_AUTH_EVENTS: 'auth.events.dlx',
 };
 
 export const RABBITMQ_EXCHANGE_TYPE = {
@@ -10,6 +11,10 @@ export const RABBITMQ_QUEUES = {
   MAIL: {
     REGISTER: 'mailer.send.register.queue',
     FORGOT_PASSWORD: 'mailer.send.reset.queue',
+    _DLQ: {
+      REGISTER: 'mailer.send.register.dlq',
+      FORGOT_PASSWORD: 'mailer.send.reset.dlq',
+    },
   }
 };
 
