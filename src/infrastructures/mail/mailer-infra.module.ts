@@ -2,7 +2,8 @@ import { Global, Module } from "@nestjs/common";
 import { MailerModule } from "@nestjs-modules/mailer";
 import { ConfigService } from "@nestjs/config";
 import { MailerInfraConfiguration } from "./mail.config";
-import { MailerService } from "./mailer.service";
+import { MailerConsumer } from "./mailer.consumer";
+import { MailerHelper } from "./mailer.helper";
 
 @Global()
 @Module({
@@ -12,7 +13,7 @@ import { MailerService } from "./mailer.service";
       useFactory: MailerInfraConfiguration,
     }),
   ],
-  providers: [MailerService],
+  providers: [MailerConsumer, MailerHelper],
   exports: [MailerInfraModule],
 })
 export class MailerInfraModule {}

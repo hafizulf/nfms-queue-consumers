@@ -4,8 +4,9 @@ import { RABBITMQ_EXCHANGES, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from "../r
 import { Injectable, Logger } from "@nestjs/common";
 import { EmailPurpose, MessageRegisterEmail } from "./mailer.dto";
 
-export class MailerService {
-  private readonly logger = new Logger(MailerService.name);
+@Injectable()
+export class MailerConsumer {
+  private readonly logger = new Logger(MailerConsumer.name);
 
   constructor(private readonly mailHelper: MailerHelper) {}
 
@@ -21,8 +22,6 @@ export class MailerService {
   })
   async onRegisterMessage(msg: any, raw?: any) {
     const payload: MessageRegisterEmail = Buffer.isBuffer(msg) ? safeJson(msg.toString()) : msg;
-    const headers = raw?.properties?.headers ?? {};
-
     if (!payload?.email || !payload?.verifyUrl) {
       this.logger.warn(`invalid payload: ${JSON.stringify(payload)}`);
       return new Nack(false); // DLQ
@@ -35,10 +34,6 @@ export class MailerService {
         mailBody: payload.verifyUrl,
         type: EmailPurpose.REGISTER,
       });
-
-      this.logger.log(
-        `REGISTER sent -> to=${payload.email} purpose=${payload.purpose} idem=${headers['x-idempotency-key'] ?? '-'}`
-      );
 
       return;
     } catch (e: any) {
