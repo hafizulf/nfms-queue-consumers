@@ -14,6 +14,7 @@ export const EnvValidationSchema = z.object({
     .transform(Number),
   RABBITMQ_URI: z.string(),
   MAIL_FROM: z.string(),
+  MAIL_HOST: z.string(),
   MAIL_PORT: z.coerce.number(),
   MAIL_USER: z.string(),
   MAIL_PASS: z.string(),

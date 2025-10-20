@@ -3,6 +3,7 @@ import { MailerHelper } from "./mailer.helper";
 import { RABBITMQ_EXCHANGES, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from "../rabbitmq/rabbitmq.constant";
 import { Injectable, Logger } from "@nestjs/common";
 import { EmailPurpose, MessageRegisterEmail } from "./mailer.dto";
+import { emailNotification } from "./mail.template";
 
 @Injectable()
 export class MailerConsumer {
@@ -28,10 +29,14 @@ export class MailerConsumer {
     }
 
     try {
+      const subject = payload.purpose;
+      const text = payload.verifyUrl;
+      const templateBcc = emailNotification(subject, text);
+
       await this.mailHelper.sendEmail({
         mailTo: payload.email,
-        mailSubject: payload.purpose,
-        mailBody: payload.verifyUrl,
+        mailSubject: templateBcc.subject,
+        mailBody: templateBcc.body,
         type: EmailPurpose.REGISTER,
       });
 
