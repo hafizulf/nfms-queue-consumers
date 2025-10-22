@@ -1,53 +1,49 @@
 import { Nack, RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { MailerHelper } from "./mailer.helper";
 import { RABBITMQ_EXCHANGES, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from "../rabbitmq/rabbitmq.constant";
-import { Injectable, Logger } from "@nestjs/common";
-import { EmailPurpose, MessageRegisterEmail } from "./mailer.dto";
-import { emailNotification } from "./mail.template";
+import { Injectable } from "@nestjs/common";
+import { EmailPurpose } from "./mailer.dto";
+import { BaseMailerConsumer } from "./base-mailer.consumer";
+import { MailerService } from "@nestjs-modules/mailer";
+
 
 @Injectable()
-export class MailerConsumer {
-  private readonly logger = new Logger(MailerConsumer.name);
+export class MailerConsumer extends BaseMailerConsumer {
+  constructor(mailHelper: MailerHelper) {
+    super(mailHelper, MailerService.name);
+  }
 
-  constructor(private readonly mailHelper: MailerHelper) {}
+  private static buildQueueOptions(dlx: string, dlrk: string) {
+    return {
+      durable: true,
+      deadLetterExchange: dlx,
+      deadLetterRoutingKey: dlrk,
+    } as const;
+  }
 
   @RabbitSubscribe({
     exchange: RABBITMQ_EXCHANGES.AUTH_EVENTS,
     routingKey: RABBITMQ_ROUTING_KEYS.MAIL.REGISTER,
     queue: RABBITMQ_QUEUES.MAIL.REGISTER,
-    queueOptions: {
-      durable: true,
-      deadLetterExchange: RABBITMQ_EXCHANGES.DEAD_LETTER_AUTH_EVENTS,
-      deadLetterRoutingKey: RABBITMQ_ROUTING_KEYS.MAIL.REGISTER,
-    },
+    queueOptions: MailerConsumer.buildQueueOptions(
+      RABBITMQ_EXCHANGES.DEAD_LETTER_AUTH_EVENTS,
+      RABBITMQ_ROUTING_KEYS.MAIL.REGISTER,
+    ),
   })
-  async onRegisterMessage(msg: any, raw?: any) {
-    const payload: MessageRegisterEmail = Buffer.isBuffer(msg) ? safeJson(msg.toString()) : msg;
-    if (!payload?.email || !payload?.verifyUrl) {
-      this.logger.warn(`invalid payload: ${JSON.stringify(payload)}`);
-      return new Nack(false); // DLQ
-    }
-
-    try {
-      const subject = payload.purpose;
-      const text = payload.verifyUrl;
-      const templateBcc = emailNotification(subject, text);
-
-      await this.mailHelper.sendEmail({
-        mailTo: payload.email,
-        mailSubject: templateBcc.subject,
-        mailBody: templateBcc.body,
-        type: EmailPurpose.REGISTER,
-      });
-
-      return;
-    } catch (e: any) {
-      this.logger.error(`send failed: ${e?.message ?? e}`);
-      return new Nack(false);
-    }
+  async onRegisterMessage(msg: unknown): Promise<void | Nack> {
+    return this.process(msg, EmailPurpose.REGISTER);
   }
-}
 
-function safeJson(s: string) {
-  try { return JSON.parse(s); } catch { return s; }
+  @RabbitSubscribe({
+    exchange: RABBITMQ_EXCHANGES.AUTH_EVENTS,
+    routingKey: RABBITMQ_ROUTING_KEYS.MAIL.FORGOT_PASSWORD,
+    queue: RABBITMQ_QUEUES.MAIL.FORGOT_PASSWORD,
+    queueOptions: MailerConsumer.buildQueueOptions(
+      RABBITMQ_EXCHANGES.DEAD_LETTER_AUTH_EVENTS,
+      RABBITMQ_ROUTING_KEYS.MAIL.FORGOT_PASSWORD,
+    ),
+  })
+  async onForgotPasswordMessage(msg: unknown): Promise<void | Nack> {
+    return this.process(msg, EmailPurpose.FORGOT_PASSWORD);
+  }
 }
